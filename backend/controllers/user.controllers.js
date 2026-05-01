@@ -1,5 +1,5 @@
  import uploadOnCloudinary from "../config/cloudinary.js"
-import geminiResponse from "../gemini.js"
+import groqResponse from "../groq.js"
 import User from "../models/user.model.js"
 import moment from "moment"
  export const getCurrentUser=async (req,res)=>{
@@ -22,6 +22,7 @@ export const updateAssistant=async (req,res)=>{
       let assistantImage;
 if(req.file){
    assistantImage=await uploadOnCloudinary(req.file.path)
+   if(!assistantImage) return res.status(500).json({message:"cloudinary upload error"})
 }else{
    assistantImage=imageUrl
 }
@@ -42,43 +43,48 @@ export const askToAssistant=async (req,res)=>{
    try {
       const {command}=req.body
       const user=await User.findById(req.userId);
+      if(!user) return res.status(400).json({response:"user not found"})
       user.history.push(command)
-      user.save()
+      await user.save()
       const userName=user.name
       const assistantName=user.assistantName
-      const result=await geminiResponse(command,assistantName,userName)
+      const result=await groqResponse(command,assistantName,userName)
 
       const jsonMatch=result.match(/{[\s\S]*}/)
       if(!jsonMatch){
          return res.status(400).json({response:"sorry, i can't understand"})
       }
-      const gemResult=JSON.parse(jsonMatch[0])
-      console.log(gemResult)
-      const type=gemResult.type
+      let groqResult;
+      try {
+         groqResult=JSON.parse(jsonMatch[0])
+      } catch (err) {
+         return res.status(400).json({response:"sorry, i couldn't process the response"})
+      }
+      const type=groqResult.type
 
       switch(type){
          case 'get-date' :
             return res.json({
                type,
-               userInput:gemResult.userInput,
+               userInput:groqResult.userInput,
                response:`current date is ${moment().format("YYYY-MM-DD")}`
             });
             case 'get-time':
                 return res.json({
                type,
-               userInput:gemResult.userInput,
+               userInput:groqResult.userInput,
                response:`current time is ${moment().format("hh:mm A")}`
             });
              case 'get-day':
                 return res.json({
                type,
-               userInput:gemResult.userInput,
+               userInput:groqResult.userInput,
                response:`today is ${moment().format("dddd")}`
             });
             case 'get-month':
                 return res.json({
                type,
-               userInput:gemResult.userInput,
+               userInput:groqResult.userInput,
                response:`today is ${moment().format("MMMM")}`
             });
       case 'google-search':
@@ -91,8 +97,8 @@ export const askToAssistant=async (req,res)=>{
        case "weather-show" :
          return res.json({
             type,
-            userInput:gemResult.userInput,
-            response:gemResult.response,
+            userInput:groqResult.userInput,
+            response:groqResult.response,
          });
 
          default:

@@ -1,7 +1,8 @@
 import axios from "axios"
-const geminiResponse=async (command,assistantName,userName)=>{
+const groqResponse=async (command,assistantName,userName)=>{
 try {
-    const apiUrl=process.env.GEMINI_API_URL
+    const apiUrl = process.env.GROK_API_URL || "https://api.groq.com/openai/v1/chat/completions";
+    const apiKey = process.env.GROK_API_KEY;
     const prompt = `You are a virtual assistant named ${assistantName} created by ${userName}. 
 You are not Google. You will now behave like a voice-enabled assistant.
 
@@ -42,21 +43,23 @@ Important:
 now your userInput- ${command}
 `;
 
+    const result = await axios.post(apiUrl, {
+        messages: [{ role: "user", content: prompt }],
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.7
+    }, {
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+        }
+    });
 
-
-
-
-    const result=await axios.post(apiUrl,{
-    "contents": [{
-    "parts":[{"text": prompt}]
-    }]
-    })
-return result.data.candidates[0].content.parts[0].text
+    return result.data.choices[0].message.content;
 } catch (error) {
-    console.error("Gemini API Error:", error?.response?.data || error);
+    console.error("Groq API Error:", error?.response?.data || error);
     // Return a default JSON-like string so the backend doesn't crash
-    return JSON.stringify({ type: "general", response: "Sorry, my brain is having trouble connecting to Gemini API.", userInput: command });
+    return JSON.stringify({ type: "general", response: "Sorry, my brain is having trouble connecting to the AI service.", userInput: command });
 }
 }
 
-export default geminiResponse
+export default groqResponse

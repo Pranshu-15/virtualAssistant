@@ -3,17 +3,21 @@ import dotenv from "dotenv"
 dotenv.config()
 import connectDb from "./config/db.js"
 import authRouter from "./routes/auth.routes.js"
-import cors from "cors"
 import cookieParser from "cookie-parser"
 import userRouter from "./routes/user.routes.js"
-import geminiResponse from "./gemini.js"
-
 
 const app=express()
-app.use(cors({
-    origin:"http://localhost:5173",
-    credentials:true
-}))
+app.use((req, res, next) => {
+    const origin = req.headers.origin || "http://localhost:5173";
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
+    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    if (req.method === "OPTIONS") {
+        return res.status(200).end();
+    }
+    next();
+});
 const port=process.env.PORT || 5000
 app.use(express.json())
 app.use(cookieParser())

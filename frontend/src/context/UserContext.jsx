@@ -11,13 +11,12 @@ function UserContext({children}) {
         try {
             const result=await axios.get(`${serverUrl}/api/user/current`,{withCredentials:true})
             setUserData(result.data)
-            console.log(result.data)
         } catch (error) {
             console.log(error)
         }
     }
 
-    const getGeminiResponse=async (command)=>{
+    const getGroqResponse=async (command)=>{
 try {
   const result=await axios.post(`${serverUrl}/api/user/asktoassistant`,{command},{withCredentials:true})
   return result.data
@@ -30,7 +29,7 @@ try {
 handleCurrentUser()
     },[])
     const value={
-serverUrl,userData,setUserData,backendImage,setBackendImage,frontendImage,setFrontendImage,selectedImage,setSelectedImage,getGeminiResponse
+serverUrl,userData,setUserData,backendImage,setBackendImage,frontendImage,setFrontendImage,selectedImage,setSelectedImage,getGroqResponse
     }
   return (
     <div>
