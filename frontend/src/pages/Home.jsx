@@ -115,6 +115,8 @@ function Home() {
     }
     recognition.onresult = async (e) => {
       const transcript = e.results[e.results.length - 1][0].transcript.trim()
+      console.log("🎙️ Heard:", transcript, "| Expected wake word:", userData.assistantName)
+      
       if (transcript.toLowerCase().includes(userData.assistantName.toLowerCase())) {
         setAiText("")
         setUserText(transcript)
@@ -124,7 +126,10 @@ function Home() {
         const data = await getGroqResponse(transcript)
         if (data) { handleCommand(data); setAiText(data.response || "No response received") }
         else setAiText("I couldn't process that command right now.")
-        setUserText("")
+        
+        setTimeout(() => setUserText(""), 3000)
+      } else {
+        setUserText(`(Heard: "${transcript}")`)
       }
     }
 
